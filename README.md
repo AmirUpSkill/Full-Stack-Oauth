@@ -1,41 +1,42 @@
 
+
+---
+
 # Full Stack OAuth 2.0 Authentication POC
 
 ## Project Goal
 
-This repository contains the code for a Proof-of-Concept (POC) project demonstrating a full-stack authentication system using OAuth 2.0. The primary goal was to build a custom authentication backend using the Spring ecosystem, integrate it with a Next.js frontend, and leverage Redis for session management, starting with Google as the initial OAuth provider. This project serves as an exploration and potential replacement for third-party authentication services like Clerk within the context of an internship at Proxym.
+This repository contains a Proof-of-Concept (POC) project showcasing a full-stack authentication system built with OAuth 2.0. The aim is to demonstrate a custom authentication backend using the Spring ecosystem, paired with a Next.js frontend, and utilizing Redis for session management. It starts with Google as the OAuth provider, offering a foundation that could be adapted to replace third-party authentication services in various applications.
 
 ## Key Features & Flow
 
-- **Backend:** Spring Boot application handling the OAuth 2.0 Authorization Code Grant flow.
-- **Frontend:** Next.js application providing the user interface.
-- **Authentication Provider:** Google (Initial implementation). ClickUp integration is planned.
-- **Session Management:** Configured to use Redis (via Docker Compose for local dev), although final verification of session storage in Redis is pending troubleshooting.
+- **Backend:** A Spring Boot application managing the OAuth 2.0 Authorization Code Grant flow.
+- **Frontend:** A Next.js application serving as the user interface.
+- **Authentication Provider:** Google (initial setup), with the potential to add other providers.
+- **Session Management:** Configured to use Redis (via Docker Compose locally), though session storage in Redis requires further verification.
 - **User Flow:**
-  1. User lands on a SaaS-like Landing Page (`/`).
-  2. Header shows "Sign In" / "Sign Up" buttons.
-  3. Clicking either button navigates to the frontend Login Page (`/login`).
-  4. Login page displays a "Sign In with Google" button.
-  5. Clicking the Google button redirects to the backend (`/oauth2/authorization/google`), which initiates the standard Google OAuth flow.
-  6. After successful Google authentication, Google redirects to the backend callback (`/login/oauth2/code/google`).
-  7. Backend validates the callback, creates a session (intended for Redis), and redirects the browser to the frontend Home Page (`/home`).
-  8. Frontend detects the session (via API call), displays authenticated user details (`Hello, {Name}!`), and updates the header (shows user name and Logout button).
-  9. Logout button triggers backend logout (`/logout`), invalidates the session, and redirects to the frontend Landing Page.
+  1. Users arrive at a SaaS-style Landing Page (`/`).
+  2. The header displays "Sign In" / "Sign Up" options.
+  3. Clicking either directs to a Login Page (`/login`).
+  4. The Login Page offers a "Sign In with Google" button.
+  5. Clicking it routes to the backend (`/oauth2/authorization/google`) to start Google’s OAuth flow.
+  6. Post-authentication, Google redirects to the backend callback (`/login/oauth2/code/google`).
+  7. The backend validates the callback, establishes a session (intended for Redis), and redirects to the frontend Home Page (`/home`).
+  8. The frontend confirms the session via an API call, greets the user (e.g., "Hello, {Name}!"), and updates the header with a Logout option.
+  9. Logout triggers the backend (`/logout`), clears the session, and returns to the Landing Page.
 
 ## Technology Stack
 
 ### Backend (`/backend`)
-
 - **Framework:** Spring Boot 3.4.4
 - **Language:** Java 21
 - **Security:** Spring Security (OAuth2 Client, Web Security)
 - **Build Tool:** Maven
 - **Session Store:** Redis (via Spring Session Data Redis)
-- **Database (Session):** Redis (running via Docker Compose locally)
+- **Database (Session):** Redis (running locally via Docker Compose)
 - **Dev Utilities:** Lombok
 
 ### Frontend (`/frontend`)
-
 - **Framework:** Next.js 15.3.1 (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
@@ -62,28 +63,25 @@ Full-Stack-Oauth/
 ## Setup & Installation
 
 **Prerequisites:**
-
 - Java JDK 21 or later
 - Apache Maven
-- Node.js (check `.nvmrc` or use latest LTS) and pnpm
-- Docker Desktop (for running Redis)
+- Node.js (latest LTS recommended) and pnpm
+- Docker Desktop (for Redis)
 - Git
 
-**1. Clone the Repository:**
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/YourUsername/Full-Stack-Oauth.git # Replace with your repo URL
+git clone <your-repo-url> # Replace with your repository URL
 cd Full-Stack-Oauth
 ```
 
-**2. Backend Setup:**
-
-- **Google Credentials:** You need to obtain OAuth 2.0 Client ID and Client Secret from Google Cloud Console.
-  - Create/Select a project.
+### 2. Backend Setup
+- **Google Credentials:** Obtain an OAuth 2.0 Client ID and Client Secret from Google Cloud Console:
+  - Create/select a project.
   - Configure the OAuth Consent Screen (add your email as a test user).
-  - Create OAuth 2.0 Client ID credentials for a "Web application".
+  - Generate OAuth 2.0 Client ID credentials for a "Web application".
   - Set the Authorized redirect URI to: `http://localhost:8080/login/oauth2/code/google`
-- **Configure Credentials:** Create the file `backend/src/main/resources/application.yml`. (This file is gitignored for security). Populate it with your credentials and Redis config (see example below, replace placeholders):
+- **Configure Credentials:** Create `backend/src/main/resources/application.yml` (gitignored for security) with the following, replacing placeholders:
 
 ```yaml
 # Server configuration
@@ -97,13 +95,12 @@ spring:
   session:
     store-type: redis
     redis:
-      serialization: jackson # Recommended
+      serialization: jackson
       flush-mode: ON_SAVE
   data:
     redis:
       host: localhost
       port: 6379
-      # password: your-redis-password # If you set one in docker-compose
   security:
     oauth2:
       client:
@@ -118,96 +115,77 @@ spring:
 # Logging
 logging:
   level:
-    # Set desired levels
     org.springframework.session: DEBUG 
     org.springframework.data.redis: DEBUG
-    com.amir.backend: DEBUG
+    com.example.backend: DEBUG # Adjust package name as needed
 ```
 
-- **Build Backend:** (Optional, but good practice)
-
+- **Build Backend (Optional):**
 ```bash
 cd backend
-mvn clean package 
+mvn clean package
 cd ..
 ```
 
-**3. Frontend Setup:**
-
+### 3. Frontend Setup
 - **Install Dependencies:**
-
 ```bash
 cd frontend
 pnpm install
 ```
-
-- **Environment Variables:** Create a file `.env.local` in the `frontend/` directory:
-
+- **Environment Variables:** Create `frontend/.env.local`:
 ```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
 ```
-
-- **Return to root:**
-
+- Return to root:
 ```bash
 cd ..
 ```
 
 ## Running the Application
 
-**1. Start Redis:** Open a terminal in the `backend/` directory:
-
+1. **Start Redis:** In `backend/`:
 ```bash
 docker-compose up -d
 ```
+- Check it’s running: `docker ps` (look for a Redis container).
 
-- Verify it's running: `docker ps` (should show `proxym-auth-redis`).
-
-**2. Start Backend:** Open another terminal in the `backend/` directory:
-
+2. **Start Backend:** In `backend/`:
 ```bash
-# Option 1: Using Maven plugin
-mvn spring-boot:run 
-# Option 2: Running the JAR (if you built it)
-# java -jar target/backend-*.jar
+mvn spring-boot:run
 ```
 
-- Watch for successful startup and connection messages (especially regarding Redis if troubleshooting).
-
-**3. Start Frontend:** Open a third terminal in the `frontend/` directory:
-
+3. **Start Frontend:** In `frontend/`:
 ```bash
 pnpm dev
 ```
 
-**4. Access Application:** Open your browser and navigate to `http://localhost:3000`.
+4. **Access:** Visit `http://localhost:3000` in your browser.
 
-## Current Status (as of 2025-04-29)
+## Current Status
 
 - **Backend:**
-  - Google OAuth2 login flow implemented and working.
-  - `/api/user/me` endpoint correctly returns authenticated user data.
-  - CORS configured for frontend interaction.
-  - Service layer implemented.
-  - Dependencies and configuration for Redis sessions added.
+  - Google OAuth2 login flow works.
+  - `/api/user/me` endpoint returns user data.
+  - CORS configured for frontend.
+  - Redis session dependencies set up.
 - **Frontend:**
-  - Project setup complete (Next.js, TS, Tailwind, Shadcn).
-  - Landing page, Login page, Header, and Authenticated Home page components created.
-  - Authentication state management via Context API implemented.
-  - API integration for user fetching and logout working.
-  - Multi-step login flow implemented.
-- **Known Issues / Pending:**
-  - **Redis Session Verification:** Despite configurations appearing correct and startup logs showing `RedisHttpSessionConfiguration` matching, sessions are not being stored in Redis (`redis-cli` shows empty keys). Further troubleshooting needed. The application currently falls back to in-memory sessions.
+  - Full setup with Next.js, TypeScript, Tailwind, and shadcn/ui.
+  - Pages (Landing, Login, Home) and Header built.
+  - Authentication state managed via Context API.
+  - API integration for user data and logout functional.
+- **Pending:**
+  - **Redis Issue:** Sessions aren’t persisting in Redis despite configuration; currently uses in-memory sessions.
 
 ## Next Steps
+- Fix Redis session persistence.
+- Add more OAuth providers.
+- Implement tests (JUnit, Mockito).
+- Set up CI/CD (e.g., GitHub Actions).
+- Enhance frontend UI/UX.
 
-- Resolve Redis Session Issue: Diagnose and fix why sessions aren't being persisted to Redis.
-- Add ClickUp Provider: Integrate ClickUp as a second OAuth 2.0 provider on the backend.
-- Testing: Implement Unit/Integration tests for the backend (JUnit, Mockito, Spring Boot Test).
-- CI/CD Pipeline: Set up a GitHub Actions workflow for automated testing, building, and potentially Docker image creation.
-- Frontend Refinement: Improve UI/UX, add loading states, error handling.
+## Notes
+- The `application.yml` file is gitignored for security—create it locally with your credentials.
+- Add your email as a "Test User" in Google’s OAuth Consent Screen during testing.
 
-## Important Notes
-
-- The backend's `application.yml` file contains sensitive Google credentials and is intentionally excluded from Git via the root `.gitignore` file. Ensure you create this file locally using your own credentials when setting up the project.
-- Remember to add your Google account as a "Test User" in the Google Cloud OAuth Consent Screen settings while the app is in testing mode.
+---
